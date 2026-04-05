@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Этап 3: Финальная Настройка</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #050509;
+            /* Космический фон */
+            background-image: 
+                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 3px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 2px),
+                radial-gradient(white, rgba(255,255,255,.1) 1px, transparent 2px);
+            background-size: 550px 550px, 350px 350px, 250px 250px;
+            
+            color: #00ffcc;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            width: 500px;
+        }
+
+        .hud {
+            width: 100%;
+            margin-bottom: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 12px;
+            border: 2px solid #333;
+            box-sizing: border-box;
+            text-align: center;
+            border-radius: 8px;
+        }
+
+        .bar-wrapper {
+            width: 100%;
+            height: 14px;
+            border: 2px solid #00ffcc;
+            background: rgba(0, 255, 204, 0.1);
+            margin-top: 10px;
+            border-radius: 7px;
+            overflow: hidden;
+        }
+
+        #progress {
+            height: 100%;
+            width: 0%;
+            background: #00ffcc;
+            box-shadow: 0 0 15px #00ffcc;
+            transition: width 0.1s linear;
+        }
+
+        canvas {
+            border: 2px solid #333;
+            background: radial-gradient(circle, rgba(26, 26, 46, 0.8) 0%, rgba(11, 14, 20, 0.9) 100%);
+            cursor: crosshair;
+            border-radius: 8px;
+        }
+
+        /* Общий стиль для наложений (старт и победа) */
+        #overlay {
+            position: absolute;
+            top: 60px; /* Высота HUD + отступ */
+            left: 0;
+            width: 500px;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.92); /* Темный фон поверх канваса */
+            z-index: 10;
+            text-align: center;
+            border-radius: 8px;
+            border: 2px solid #333;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 18px 40px;
+            font-size: 1.2rem;
+            font-family: 'Courier New', Courier, monospace;
+            background: transparent;
+            color: #00ffcc;
+            border: 2px solid #00ffcc;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 30px;
+            letter-spacing: 2px;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+        }
+
+        button:hover {
+            background: #00ffcc;
+            color: #050509;
+            box-shadow: 0 0 30px #00ffcc;
+        }
+
+        /* Стиль для HTML-звезд */
+        .stars-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .html-star {
+            color: #FFD700; /* Золотой цвет */
+            font-size: 5rem; /* Очень большой размер */
+            text-shadow: 0 0 20px #FFD700, 0 0 40px #FFD700;
+            opacity: 0;
+            transform: scale(0.5);
+            /* Анимация появления */
+            animation: starAppear 0.5s ease-out forwards;
+        }
+
+        /* Задержка для каждой звезды */
+        .html-star:nth-child(2) { animation-delay: 0.3s; }
+        .html-star:nth-child(3) { animation-delay: 0.6s; }
+
+        @keyframes starAppear {
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .hidden { display: none !important; }
+        
+        .victory-title {
+            color: white;
+            font-size: 2rem;
+            margin: 0 0 15px 0;
+            text-shadow: 0 0 10px #FFD700;
+        }
+
+        .victory-text {
+            color: #ccc;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="hud">
+        <div id="status-text">СИСТЕМА: ОЖИДАНИЕ</div>
+        <div class="bar-wrapper">
+            <div id="progress"></div>
+        </div>
+    </div>
+
+    <canvas id="stabilizerCanvas" width="500" height="500"></canvas>
+
+    <div id="overlay">
+        <div id="start-content">
+            <h2 style="color: #00ffcc; font-size: 1.8rem;">ЭТАП 3:<br>СТАБИЛИЗАЦИЯ</h2>
+            <p style="color: #888; font-size: 0.9rem;">Удерживайте сигнал, чтобы восстановить связь.</p>
+            <button id="start-btn">ЗАПУСК</button>
+        </div>
+        
+        <div id="victory-content" class="hidden">
+            <div class="stars-container">
+                <span class="html-star">★</span>
+                <span class="html-star">★</span>
+                <span class="html-star">★</span>
+            </div>
+
+            <div class="victory-title">СВЯЗЬ НАСТРОЕНА!</div>
+            <div class="victory-text">
+                Робот успешно передал данные!<br>
+                Ты прошел все испытания.<br>
+                <strong>Пора переходить к финалу!</strong>
+            </div>
+            <button id="restart-btn">ИГРАТЬ СНОВА</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Основные элементы
+    const canvas = document.getElementById('stabilizerCanvas');
+    const ctx = canvas.getContext('2d');
+    const progressBar = document.getElementById('progress');
+    const statusText = document.getElementById('status-text');
+    const overlay = document.getElementById('overlay');
+    const startContent = document.getElementById('start-content');
+    const victoryContent = document.getElementById('victory-content');
+    const startBtn = document.getElementById('start-btn');
+    const restartBtn = document.getElementById('restart-btn');
+
+    // Состояния игры
+    let progress = 0;
+    let isWon = false;
+    let gameActive = false;
+    let imagesLoaded = false;
+
+    // Спутник
+    const satelliteImg = new Image();
+    satelliteImg.src = 'satellite.png'; 
+    satelliteImg.onload = () => imagesLoaded = true;
+    satelliteImg.onerror = () => {
+        statusText.innerText = "ОШИБКА: Нет файла 'satellite.png'";
+        statusText.style.color = "red";
+    }
+
+    const signal = {
+        x: 250, y: 250, targetX: 250, targetY: 250,
+        baseRadius: 45, currentRadius: 45, pulseTimer: 0
+    };
+
+    const mouse = { x: 250, y: 250 };
+
+    // События
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+    });
+
+    startBtn.onclick = startGame;
+    restartBtn.onclick = resetGame;
+
+    function startGame() {
+        if (!imagesLoaded) return;
+        overlay.classList.add('hidden');
+        gameActive = true;
+        isWon = false;
+        progress = 0;
+        statusText.innerText = "СТАБИЛИЗАЦИЯ: 0%";
+        statusText.style.color = "#00ffcc";
+        update();
+    }
+
+    function resetGame() {
+        victoryContent.classList.add('hidden');
+        startContent.classList.remove('hidden');
+        // Обнуляем звезды (перезапускаем анимацию)
+        const stars = document.querySelectorAll('.html-star');
+        stars.forEach(star => star.style.animation = 'none'); 
+        setTimeout(() => {
+             stars.forEach(star => star.style.animation = '');
+        }, 10);
+
+        statusText.innerText = "СИСТЕМА: ГОТОВНОСТЬ";
+        progressBar.style.width = "0%";
+    }
+
+    function updateSignal() {
+        // Ускоренное движение спутника
+        if (Math.random() > 0.92) {
+            signal.targetX += (Math.random() - 0.5) * 380;
+            signal.targetY += (Math.random() - 0.5) * 380;
+        }
+        const margin = 70;
+        signal.targetX = Math.max(margin, Math.min(canvas.width - margin, signal.targetX));
+        signal.targetY = Math.max(margin, Math.min(canvas.height - margin, signal.targetY));
+
+        signal.x += (signal.targetX - signal.x) * 0.055; 
+        signal.y += (signal.targetY - signal.y) * 0.055;
+
+        // Быстрая пульсация зоны
+        signal.pulseTimer += 0.08;
+        signal.currentRadius = signal.baseRadius + Math.sin(signal.pulseTimer) * 6;
+    }
+
+    function update() {
+        if (!gameActive || isWon) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        updateSignal();
+        
+        // Рисуем спутник
+        ctx.drawImage(satelliteImg, signal.x - 40, signal.y - 40, 80, 80);
+
+        const dist = Math.hypot(mouse.x - signal.x, mouse.y - signal.y);
+
+        if (dist < signal.currentRadius) {
+            progress += 0.45; // Скорость зарядки
+            statusText.innerText = "СТАБИЛИЗАЦИЯ: " + Math.floor(progress) + "%";
+            statusText.style.color = "white";
+            ctx.strokeStyle = "white";
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "white";
+        } else {
+            if (progress > 0) progress -= 0.12; // Скорость потери
+            statusText.innerText = "СИГНАЛ НЕСТАБИЛЕН";
+            statusText.style.color = "#e94560"; // Красный при потере
+            ctx.strokeStyle = "#00ffcc";
+            ctx.shadowBlur = 0;
+        }
+
+        // Пульсирующие кольца сигнала
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(signal.x, signal.y, signal.currentRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Красный прицел
+        ctx.strokeStyle = "#e94560";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(mouse.x - 20, mouse.y); ctx.lineTo(mouse.x + 20, mouse.y);
+        ctx.moveTo(mouse.x, mouse.y - 20); ctx.lineTo(mouse.x, mouse.y + 20);
+        ctx.stroke();
+
+        progressBar.style.width = Math.min(progress, 100) + "%";
+
+        if (progress >= 100) {
+            isWon = true;
+            gameActive = false;
+            showVictory();
+        } else {
+            requestAnimationFrame(update);
+        }
+    }
+
+    function showVictory() {
+        overlay.classList.remove('hidden');
+        startContent.classList.add('hidden');
+        victoryContent.classList.remove('hidden');
+        statusText.innerText = "ПОЗДРАВЛЯЕМ!";
+        statusText.style.color = "#FFD700";
+    }
+</script>
+
+</body>
+</html>
